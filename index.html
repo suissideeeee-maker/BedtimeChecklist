@@ -1,0 +1,715 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bedtime Checklist</title>
+<style>
+  :root{
+    --bg-1:#0b1026;
+    --bg-2:#151b3d;
+    --card:#1b2348;
+    --card-2:#232c56;
+    --accent:#8b9dff;
+    --accent-2:#c9a6ff;
+    --text:#e8eaff;
+    --text-dim:#9aa1cc;
+    --border:#2c3566;
+    --done:#5eead4;
+    --danger:#ff8fa3;
+    --radius:16px;
+    --shadow: 0 10px 30px rgba(0,0,0,.35);
+  }
+  [data-theme="light"]{
+    --bg-1:#eef1ff;
+    --bg-2:#f7f8ff;
+    --card:#ffffff;
+    --card-2:#f1f3ff;
+    --accent:#5b6bd8;
+    --accent-2:#9d6bd8;
+    --text:#1c2140;
+    --text-dim:#5f6690;
+    --border:#dfe2f5;
+    --done:#149b83;
+    --danger:#d84f68;
+    --shadow: 0 10px 30px rgba(30,30,80,.08);
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    min-height:100vh;
+    background:
+      radial-gradient(1200px 600px at 10% -10%, var(--bg-2), transparent 60%),
+      radial-gradient(1000px 500px at 110% 10%, var(--bg-2), transparent 55%),
+      var(--bg-1);
+    color:var(--text);
+    font-family: 'Segoe UI', system-ui, -apple-system, Roboto, Helvetica, Arial, sans-serif;
+    padding:32px 16px 80px;
+    transition: background .3s ease, color .3s ease;
+  }
+  .wrap{max-width:640px;margin:0 auto;}
+  header{
+    display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:20px;
+  }
+  .title{display:flex;align-items:center;gap:12px;}
+  .moon{font-size:34px;filter:drop-shadow(0 0 12px rgba(139,157,255,.6));}
+  h1{font-size:1.5rem;margin:0;letter-spacing:.2px;}
+  .subtitle{color:var(--text-dim);font-size:.88rem;margin-top:2px;}
+  .icon-btn{
+    background:var(--card);border:1px solid var(--border);color:var(--text);
+    width:42px;height:42px;border-radius:12px;cursor:pointer;font-size:18px;
+    display:flex;align-items:center;justify-content:center;transition:.15s;
+    box-shadow:var(--shadow);
+  }
+  .icon-btn:hover{transform:translateY(-1px);border-color:var(--accent);}
+  .top-actions{display:flex;gap:8px;}
+
+  .progress-card{
+    background:linear-gradient(135deg,var(--card),var(--card-2));
+    border:1px solid var(--border);border-radius:var(--radius);
+    padding:18px 20px;margin-bottom:20px;box-shadow:var(--shadow);
+  }
+  .progress-top{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:10px;}
+  .progress-num{font-size:1.6rem;font-weight:700;}
+  .progress-label{color:var(--text-dim);font-size:.85rem;}
+  .bar-track{height:10px;background:rgba(255,255,255,.08);border-radius:10px;overflow:hidden;}
+  [data-theme="light"] .bar-track{background:#e6e9fb;}
+  .bar-fill{height:100%;background:linear-gradient(90deg,var(--accent),var(--accent-2));border-radius:10px;transition:width .4s ease;}
+  .encouragement{margin-top:10px;font-size:.85rem;color:var(--text-dim);min-height:1.2em;}
+
+  .section{margin-bottom:22px;}
+  .section-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;}
+  .section-head h2{font-size:.78rem;text-transform:uppercase;letter-spacing:1.2px;color:var(--text-dim);margin:0;font-weight:700;}
+
+  ul.checklist{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px;}
+  .item{
+    display:flex;align-items:center;gap:12px;background:var(--card);
+    border:1px solid var(--border);border-radius:12px;padding:12px 14px;
+    box-shadow:var(--shadow);transition:.15s;
+  }
+  .item.done{opacity:.55;}
+  .item.done .label{text-decoration:line-through;}
+  .check{
+    width:24px;height:24px;border-radius:8px;border:2px solid var(--border);
+    background:transparent;cursor:pointer;flex:none;display:flex;align-items:center;justify-content:center;
+    color:var(--done);font-size:15px;transition:.15s;
+  }
+  .check.checked{background:var(--done);border-color:var(--done);color:var(--bg-1);}
+  .label{flex:1;font-size:.96rem;cursor:pointer;user-select:none;}
+  .item-remove{
+    background:none;border:none;color:var(--text-dim);cursor:pointer;font-size:16px;
+    opacity:0;transition:.15s;width:26px;
+  }
+  .item:hover .item-remove{opacity:1;}
+  .item-remove:hover{color:var(--danger);}
+
+  .add-row{display:flex;gap:8px;margin-top:10px;}
+  .add-row input{
+    flex:1;background:var(--card);border:1px solid var(--border);color:var(--text);
+    border-radius:12px;padding:12px 14px;font-size:.92rem;outline:none;
+  }
+  .add-row input:focus{border-color:var(--accent);}
+  .add-row button{
+    background:linear-gradient(135deg,var(--accent),var(--accent-2));border:none;color:#fff;
+    border-radius:12px;padding:0 18px;font-weight:600;cursor:pointer;font-size:.9rem;
+  }
+  .add-row select{
+    background:var(--card);border:1px solid var(--border);color:var(--text);
+    border-radius:12px;padding:0 10px;font-size:.85rem;
+  }
+
+  .reset-row{display:flex;gap:10px;margin-top:26px;}
+  .btn{
+    flex:1;padding:12px;border-radius:12px;border:1px solid var(--border);background:var(--card);
+    color:var(--text);cursor:pointer;font-size:.88rem;font-weight:600;transition:.15s;
+  }
+  .btn:hover{border-color:var(--accent);}
+  .btn.primary{background:linear-gradient(135deg,var(--accent),var(--accent-2));border:none;color:#fff;}
+
+  /* Settings panel */
+  .overlay{
+    position:fixed;inset:0;background:rgba(0,0,0,.5);display:none;align-items:flex-end;justify-content:center;z-index:50;
+  }
+  .overlay.open{display:flex;}
+  .panel{
+    background:var(--bg-2);border:1px solid var(--border);border-radius:20px 20px 0 0;
+    max-width:640px;width:100%;padding:22px 20px 30px;max-height:85vh;overflow-y:auto;
+    box-shadow:0 -10px 40px rgba(0,0,0,.4);
+    animation:slideUp .25s ease;
+  }
+  @keyframes slideUp{from{transform:translateY(30px);opacity:0;}to{transform:translateY(0);opacity:1;}}
+  .panel h2{margin-top:0;font-size:1.1rem;}
+  .field{margin-bottom:18px;}
+  .field label{display:block;font-size:.85rem;color:var(--text-dim);margin-bottom:6px;font-weight:600;}
+  .field input[type="time"],
+  .field input[type="number"],
+  .field input[type="text"]{
+    width:100%;background:var(--card);border:1px solid var(--border);color:var(--text);
+    border-radius:10px;padding:10px 12px;font-size:.92rem;outline:none;
+  }
+  .row-between{display:flex;justify-content:space-between;align-items:center;}
+  .switch{position:relative;width:46px;height:26px;flex:none;}
+  .switch input{opacity:0;width:0;height:0;}
+  .slider{position:absolute;inset:0;background:var(--border);border-radius:999px;cursor:pointer;transition:.2s;}
+  .slider:before{content:"";position:absolute;width:20px;height:20px;left:3px;top:3px;background:#fff;border-radius:50%;transition:.2s;}
+  .switch input:checked + .slider{background:var(--accent);}
+  .switch input:checked + .slider:before{transform:translateX(20px);}
+  .theme-choice{display:flex;gap:8px;}
+  .theme-choice button{
+    flex:1;padding:10px;border-radius:10px;border:1px solid var(--border);background:var(--card);
+    color:var(--text);cursor:pointer;font-size:.85rem;
+  }
+  .theme-choice button.active{border-color:var(--accent);background:var(--card-2);}
+  .custom-cat-list{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px;}
+  .chip{
+    background:var(--card);border:1px solid var(--border);border-radius:999px;padding:6px 12px;
+    font-size:.8rem;display:flex;align-items:center;gap:6px;
+  }
+  .chip button{background:none;border:none;color:var(--text-dim);cursor:pointer;font-size:13px;}
+  .panel-close{
+    display:block;width:100%;margin-top:6px;padding:13px;border-radius:12px;border:none;
+    background:linear-gradient(135deg,var(--accent),var(--accent-2));color:#fff;font-weight:700;cursor:pointer;
+  }
+  .hint{font-size:.78rem;color:var(--text-dim);margin-top:6px;}
+  .empty{color:var(--text-dim);font-size:.85rem;text-align:center;padding:14px 0;}
+</style>
+</head>
+<body data-theme="dark">
+<div class="wrap">
+  <header>
+    <div class="title">
+      <div class="moon">🌙</div>
+      <div>
+        <h1 id="appTitle">Bedtime Checklist</h1>
+        <div class="subtitle" id="dateLine"></div>
+      </div>
+    </div>
+    <div class="top-actions">
+      <button class="icon-btn" id="settingsBtn" title="Settings">⚙️</button>
+    </div>
+  </header>
+
+  <div class="progress-card">
+    <div class="progress-top">
+      <div><span class="progress-num" id="progNum">0/0</span> <span class="progress-label">done</span></div>
+      <div class="progress-label" id="targetTimeLabel"></div>
+    </div>
+    <div class="bar-track"><div class="bar-fill" id="barFill" style="width:0%"></div></div>
+    <div class="encouragement" id="encouragement"></div>
+  </div>
+
+  <div id="listsContainer"></div>
+
+  <div class="reset-row">
+    <button class="btn" id="resetBtn">🔄 Reset for tonight</button>
+    <button class="btn primary" id="doneBtn">✅ Mark all done</button>
+  </div>
+</div>
+
+<div class="overlay" id="overlay">
+  <div class="panel">
+    <h2>Settings</h2>
+
+    <div class="field">
+      <label>Checklist name</label>
+      <input type="text" id="nameInput" placeholder="Bedtime Checklist">
+    </div>
+
+    <div class="field">
+      <label>Target bedtime</label>
+      <input type="time" id="bedtimeInput">
+      <div class="hint">Shown as a target time on the main screen. Alarm reminders below run on a fixed 10 PM–12 AM Pacific schedule regardless of this value.</div>
+    </div>
+
+    <div class="field">
+      <label>Theme</label>
+      <div class="theme-choice">
+        <button data-theme-choice="dark" id="darkBtn">🌙 Dark</button>
+        <button data-theme-choice="light" id="lightBtn">☀️ Light</button>
+      </div>
+    </div>
+
+    <div class="field row-between">
+      <label style="margin:0;">Auto-reset every day</label>
+      <label class="switch">
+        <input type="checkbox" id="autoResetToggle">
+        <span class="slider"></span>
+      </label>
+    </div>
+
+    <div class="field row-between">
+      <label style="margin:0;">Show encouragement messages</label>
+      <label class="switch">
+        <input type="checkbox" id="encourageToggle">
+        <span class="slider"></span>
+      </label>
+    </div>
+
+    <div class="field">
+      <div class="row-between">
+        <label style="margin:0;">Bedtime reminder alarms</label>
+        <label class="switch">
+          <input type="checkbox" id="reminderToggle">
+          <span class="slider"></span>
+        </label>
+      </div>
+      <div class="hint" id="reminderStatus">Off</div>
+      <div class="hint">Fires a loud alarm-style notification every 10 minutes from 10:00 PM to 12:00 AM Pacific Time, for any items still unchecked. Needs notification permission, and only fires while this tab is open somewhere in your browser (it can be in the background, but the browser can't be fully closed).</div>
+      <button class="btn" id="testAlarmBtn" style="width:100%;margin-top:8px;">🔔 Test alarm sound</button>
+    </div>
+
+    <div class="field">
+      <label>Categories (group your routine steps)</label>
+      <div class="add-row">
+        <input type="text" id="newCatInput" placeholder="e.g. Skincare, Wind-down...">
+        <button id="addCatBtn">Add</button>
+      </div>
+      <div class="custom-cat-list" id="catList"></div>
+      <div class="hint">Deleting a category also removes its items.</div>
+    </div>
+
+    <div class="field">
+      <label>Reset all data</label>
+      <button class="btn" id="wipeBtn" style="color:var(--danger);width:100%;">Restore default checklist</button>
+    </div>
+
+    <button class="panel-close" id="closePanel">Done</button>
+  </div>
+</div>
+
+<script>
+(function(){
+  const STORAGE_KEY = "bedtimeChecklistState_v1";
+
+  const defaultState = {
+    name: "Bedtime Checklist",
+    bedtime: "22:30",
+    theme: "dark",
+    autoReset: true,
+    encourage: true,
+    remindersEnabled: false,
+    lastResetDate: new Date().toDateString(),
+    categories: [
+      { id: "wind-down", name: "Wind-down" },
+      { id: "hygiene", name: "Hygiene" },
+      { id: "tomorrow", name: "Prep for tomorrow" }
+    ],
+    items: [
+      { id: cryptoId(), catId: "wind-down", label: "Put phone on charger away from bed", done: false },
+      { id: cryptoId(), catId: "wind-down", label: "Dim the lights", done: false },
+      { id: cryptoId(), catId: "wind-down", label: "No screens for last 20 minutes", done: false },
+      { id: cryptoId(), catId: "hygiene", label: "Brush teeth", done: false },
+      { id: cryptoId(), catId: "hygiene", label: "Wash face", done: false },
+      { id: cryptoId(), catId: "tomorrow", label: "Lay out clothes for tomorrow", done: false },
+      { id: cryptoId(), catId: "tomorrow", label: "Set alarm", done: false },
+      { id: cryptoId(), catId: "tomorrow", label: "Fill water glass", done: false }
+    ]
+  };
+
+  function cryptoId(){
+    return Math.random().toString(36).slice(2,10) + Date.now().toString(36).slice(-4);
+  }
+
+  function load(){
+    try{
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if(!raw) return structuredClone(defaultState);
+      const parsed = JSON.parse(raw);
+      return Object.assign(structuredClone(defaultState), parsed);
+    }catch(e){
+      return structuredClone(defaultState);
+    }
+  }
+
+  function save(){
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+  }
+
+  let state = load();
+
+  // Auto reset check
+  function checkAutoReset(){
+    const today = new Date().toDateString();
+    if(state.autoReset && state.lastResetDate !== today){
+      state.items.forEach(i => i.done = false);
+      state.lastResetDate = today;
+      save();
+    }
+  }
+  checkAutoReset();
+
+  // Elements
+  const el = {
+    appTitle: document.getElementById('appTitle'),
+    dateLine: document.getElementById('dateLine'),
+    progNum: document.getElementById('progNum'),
+    barFill: document.getElementById('barFill'),
+    encouragement: document.getElementById('encouragement'),
+    targetTimeLabel: document.getElementById('targetTimeLabel'),
+    listsContainer: document.getElementById('listsContainer'),
+    settingsBtn: document.getElementById('settingsBtn'),
+    overlay: document.getElementById('overlay'),
+    closePanel: document.getElementById('closePanel'),
+    nameInput: document.getElementById('nameInput'),
+    bedtimeInput: document.getElementById('bedtimeInput'),
+    darkBtn: document.getElementById('darkBtn'),
+    lightBtn: document.getElementById('lightBtn'),
+    autoResetToggle: document.getElementById('autoResetToggle'),
+    encourageToggle: document.getElementById('encourageToggle'),
+    reminderToggle: document.getElementById('reminderToggle'),
+    reminderStatus: document.getElementById('reminderStatus'),
+    testAlarmBtn: document.getElementById('testAlarmBtn'),
+    newCatInput: document.getElementById('newCatInput'),
+    addCatBtn: document.getElementById('addCatBtn'),
+    catList: document.getElementById('catList'),
+    wipeBtn: document.getElementById('wipeBtn'),
+    resetBtn: document.getElementById('resetBtn'),
+    doneBtn: document.getElementById('doneBtn')
+  };
+
+  const ENCOURAGEMENTS = [
+    "Nice and easy — one step at a time.",
+    "Halfway to a good night's sleep.",
+    "Almost there, sleepyhead.",
+    "All done. Sweet dreams! 🌙",
+    "Great start — keep going."
+  ];
+
+  function render(){
+    document.body.setAttribute('data-theme', state.theme);
+    el.appTitle.textContent = state.name || "Bedtime Checklist";
+    el.dateLine.textContent = new Date().toLocaleDateString(undefined, { weekday:'long', month:'long', day:'numeric' });
+    el.targetTimeLabel.textContent = state.bedtime ? ("target " + formatTime(state.bedtime)) : "";
+
+    const total = state.items.length;
+    const doneCount = state.items.filter(i => i.done).length;
+    el.progNum.textContent = doneCount + "/" + total;
+    const pct = total ? Math.round((doneCount/total)*100) : 0;
+    el.barFill.style.width = pct + "%";
+
+    if(state.encourage){
+      if(total === 0){
+        el.encouragement.textContent = "Add a few items to build your routine.";
+      } else if(doneCount === total){
+        el.encouragement.textContent = ENCOURAGEMENTS[3];
+      } else if(pct >= 50){
+        el.encouragement.textContent = ENCOURAGEMENTS[2];
+      } else if(pct > 0){
+        el.encouragement.textContent = ENCOURAGEMENTS[1];
+      } else {
+        el.encouragement.textContent = ENCOURAGEMENTS[0];
+      }
+    } else {
+      el.encouragement.textContent = "";
+    }
+
+    renderLists();
+    renderSettings();
+  }
+
+  function renderLists(){
+    el.listsContainer.innerHTML = "";
+    if(state.categories.length === 0){
+      el.listsContainer.innerHTML = '<div class="empty">No categories yet — add one in Settings.</div>';
+      return;
+    }
+    state.categories.forEach(cat => {
+      const items = state.items.filter(i => i.catId === cat.id);
+      const section = document.createElement('div');
+      section.className = 'section';
+
+      const head = document.createElement('div');
+      head.className = 'section-head';
+      head.innerHTML = `<h2>${escapeHtml(cat.name)}</h2>`;
+      section.appendChild(head);
+
+      const ul = document.createElement('ul');
+      ul.className = 'checklist';
+
+      if(items.length === 0){
+        const li = document.createElement('div');
+        li.className = 'empty';
+        li.textContent = 'No items yet.';
+        ul.appendChild(li);
+      }
+
+      items.forEach(item => {
+        const li = document.createElement('li');
+        li.className = 'item' + (item.done ? ' done' : '');
+
+        const check = document.createElement('button');
+        check.className = 'check' + (item.done ? ' checked' : '');
+        check.innerHTML = item.done ? '✓' : '';
+        check.addEventListener('click', () => toggleItem(item.id));
+
+        const label = document.createElement('div');
+        label.className = 'label';
+        label.textContent = item.label;
+        label.addEventListener('click', () => toggleItem(item.id));
+
+        const remove = document.createElement('button');
+        remove.className = 'item-remove';
+        remove.textContent = '✕';
+        remove.addEventListener('click', () => removeItem(item.id));
+
+        li.appendChild(check);
+        li.appendChild(label);
+        li.appendChild(remove);
+        ul.appendChild(li);
+      });
+
+      section.appendChild(ul);
+
+      const addRow = document.createElement('div');
+      addRow.className = 'add-row';
+      addRow.innerHTML = `<input type="text" placeholder="Add item to ${escapeHtml(cat.name)}..." data-cat="${cat.id}"><button data-cat-add="${cat.id}">Add</button>`;
+      section.appendChild(addRow);
+
+      const input = addRow.querySelector('input');
+      const btn = addRow.querySelector('button');
+      const submit = () => {
+        const val = input.value.trim();
+        if(!val) return;
+        state.items.push({ id: cryptoId(), catId: cat.id, label: val, done: false });
+        save();
+        render();
+      };
+      btn.addEventListener('click', submit);
+      input.addEventListener('keydown', e => { if(e.key === 'Enter') submit(); });
+
+      el.listsContainer.appendChild(section);
+    });
+  }
+
+  function renderSettings(){
+    el.nameInput.value = state.name;
+    el.bedtimeInput.value = state.bedtime;
+    el.autoResetToggle.checked = state.autoReset;
+    el.encourageToggle.checked = state.encourage;
+    el.reminderToggle.checked = state.remindersEnabled;
+    if(!('Notification' in window)){
+      el.reminderStatus.textContent = 'Notifications are not supported in this browser.';
+    } else if(!state.remindersEnabled){
+      el.reminderStatus.textContent = 'Off';
+    } else if(Notification.permission === 'granted'){
+      el.reminderStatus.textContent = 'On — armed for 10:00 PM–12:00 AM Pacific, every 10 min.';
+    } else if(Notification.permission === 'denied'){
+      el.reminderStatus.textContent = 'Blocked — notifications are denied in your browser settings.';
+    } else {
+      el.reminderStatus.textContent = 'Waiting on notification permission.';
+    }
+    el.darkBtn.classList.toggle('active', state.theme === 'dark');
+    el.lightBtn.classList.toggle('active', state.theme === 'light');
+
+    el.catList.innerHTML = "";
+    state.categories.forEach(cat => {
+      const chip = document.createElement('div');
+      chip.className = 'chip';
+      chip.innerHTML = `<span>${escapeHtml(cat.name)}</span>`;
+      const removeBtn = document.createElement('button');
+      removeBtn.textContent = '✕';
+      removeBtn.addEventListener('click', () => removeCategory(cat.id));
+      chip.appendChild(removeBtn);
+      el.catList.appendChild(chip);
+    });
+  }
+
+  function toggleItem(id){
+    const item = state.items.find(i => i.id === id);
+    if(item){ item.done = !item.done; save(); render(); }
+  }
+
+  function removeItem(id){
+    state.items = state.items.filter(i => i.id !== id);
+    save(); render();
+  }
+
+  function removeCategory(catId){
+    state.categories = state.categories.filter(c => c.id !== catId);
+    state.items = state.items.filter(i => i.catId !== catId);
+    save(); render();
+  }
+
+  function formatTime(t){
+    const [h,m] = t.split(':').map(Number);
+    const ampm = h >= 12 ? 'PM' : 'AM';
+    const h12 = ((h + 11) % 12) + 1;
+    return `${h12}:${String(m).padStart(2,'0')} ${ampm}`;
+  }
+
+  function escapeHtml(str){
+    const div = document.createElement('div');
+    div.textContent = str;
+    return div.innerHTML;
+  }
+
+  // Settings panel open/close
+  el.settingsBtn.addEventListener('click', () => el.overlay.classList.add('open'));
+  el.closePanel.addEventListener('click', () => el.overlay.classList.remove('open'));
+  el.overlay.addEventListener('click', (e) => { if(e.target === el.overlay) el.overlay.classList.remove('open'); });
+
+  el.nameInput.addEventListener('input', () => { state.name = el.nameInput.value; save(); el.appTitle.textContent = state.name || "Bedtime Checklist"; });
+  el.bedtimeInput.addEventListener('change', () => { state.bedtime = el.bedtimeInput.value; save(); el.targetTimeLabel.textContent = state.bedtime ? ("target " + formatTime(state.bedtime)) : ""; });
+  el.autoResetToggle.addEventListener('change', () => { state.autoReset = el.autoResetToggle.checked; save(); });
+  el.encourageToggle.addEventListener('change', () => { state.encourage = el.encourageToggle.checked; save(); render(); });
+
+  el.reminderToggle.addEventListener('change', async () => {
+    if(el.reminderToggle.checked){
+      if(!('Notification' in window)){
+        alert('This browser does not support notifications.');
+        el.reminderToggle.checked = false;
+        return;
+      }
+      let perm = Notification.permission;
+      if(perm === 'default'){
+        perm = await Notification.requestPermission();
+      }
+      if(perm !== 'granted'){
+        alert('Notifications were not allowed, so alarms can\'t be enabled. Allow notifications for this page in your browser settings, then try again.');
+        el.reminderToggle.checked = false;
+        state.remindersEnabled = false;
+        save(); render();
+        return;
+      }
+      state.remindersEnabled = true;
+      unlockAudio();
+      new Notification('🌙 Bedtime reminders armed', { body: 'You\'ll get a loud reminder every 10 minutes from 10:00 PM to 12:00 AM Pacific while items are left.' });
+    } else {
+      state.remindersEnabled = false;
+    }
+    save(); render();
+  });
+
+  el.testAlarmBtn.addEventListener('click', () => {
+    unlockAudio();
+    playAnnoyingAlarm();
+    if('Notification' in window && Notification.permission === 'granted'){
+      new Notification('🌙 Test alarm', { body: 'This is what your bedtime reminders sound like.' });
+    }
+  });
+  el.darkBtn.addEventListener('click', () => { state.theme = 'dark'; save(); render(); });
+  el.lightBtn.addEventListener('click', () => { state.theme = 'light'; save(); render(); });
+
+  el.addCatBtn.addEventListener('click', () => {
+    const val = el.newCatInput.value.trim();
+    if(!val) return;
+    state.categories.push({ id: cryptoId(), name: val });
+    el.newCatInput.value = '';
+    save(); render();
+  });
+  el.newCatInput.addEventListener('keydown', e => { if(e.key === 'Enter') el.addCatBtn.click(); });
+
+  el.wipeBtn.addEventListener('click', () => {
+    if(confirm('Restore the default checklist? This clears your custom items and categories.')){
+      state = structuredClone(defaultState);
+      state.lastResetDate = new Date().toDateString();
+      save(); render();
+    }
+  });
+
+  el.resetBtn.addEventListener('click', () => {
+    state.items.forEach(i => i.done = false);
+    state.lastResetDate = new Date().toDateString();
+    save(); render();
+  });
+
+  el.doneBtn.addEventListener('click', () => {
+    state.items.forEach(i => i.done = true);
+    save(); render();
+  });
+
+  // ---------- Bedtime alarm engine ----------
+  let audioCtx = null;
+  function unlockAudio(){
+    try{
+      if(!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      if(audioCtx.state === 'suspended') audioCtx.resume();
+    }catch(e){ /* Web Audio unavailable */ }
+  }
+
+  // Harsh alternating-tone siren, deliberately grating (square waves, fast pitch switching).
+  function playAnnoyingAlarm(){
+    try{
+      unlockAudio();
+      if(!audioCtx) return;
+      const now = audioCtx.currentTime;
+      const duration = 2.4;
+      const gain = audioCtx.createGain();
+      gain.gain.setValueAtTime(0.0001, now);
+      gain.gain.linearRampToValueAtTime(0.35, now + 0.03);
+      gain.connect(audioCtx.destination);
+
+      const osc = audioCtx.createOscillator();
+      osc.type = 'square';
+      osc.connect(gain);
+
+      // Rapid siren sweep between two harsh, ear-piercing frequencies.
+      let t = now;
+      const step = 0.09;
+      let toggle = true;
+      while(t < now + duration){
+        osc.frequency.setValueAtTime(toggle ? 1400 : 900, t);
+        toggle = !toggle;
+        t += step;
+      }
+      gain.gain.setValueAtTime(0.35, now + duration - 0.05);
+      gain.gain.linearRampToValueAtTime(0.0001, now + duration);
+
+      osc.start(now);
+      osc.stop(now + duration);
+    }catch(e){ /* ignore playback errors */ }
+  }
+
+  function getPacificParts(date){
+    const fmt = new Intl.DateTimeFormat('en-US', {
+      timeZone: 'America/Los_Angeles',
+      hour: 'numeric', minute: 'numeric', second: 'numeric', hour12: false
+    });
+    const parts = {};
+    fmt.formatToParts(date).forEach(p => { if(p.type !== 'literal') parts[p.type] = parseInt(p.value, 10); });
+    // hour can come back as 24 at midnight in some engines; normalize to 0.
+    if(parts.hour === 24) parts.hour = 0;
+    return parts;
+  }
+
+  function inAlarmWindow(parts){
+    // 10:00 PM to 12:00 AM Pacific = hour 22 or 23.
+    return parts.hour === 22 || parts.hour === 23;
+  }
+
+  let lastFiredKey = null;
+  function tickAlarm(){
+    if(!state.remindersEnabled) return;
+    if(!('Notification' in window) || Notification.permission !== 'granted') return;
+
+    const parts = getPacificParts(new Date());
+    if(!inAlarmWindow(parts)) return;
+    if(parts.minute % 10 !== 0) return;
+
+    const key = `${parts.hour}:${parts.minute}`;
+    if(key === lastFiredKey) return;
+    lastFiredKey = key;
+
+    const remaining = state.items.filter(i => !i.done).length;
+    if(remaining === 0) return; // everything done — no need to nag
+
+    playAnnoyingAlarm();
+    try{
+      const n = new Notification('🌙 Bedtime Checklist — ' + remaining + ' step' + (remaining === 1 ? '' : 's') + ' left', {
+        body: 'It\'s past 10 PM. Finish up your before-bed routine!',
+        tag: 'bedtime-checklist-reminder',
+        renotify: true,
+        requireInteraction: true
+      });
+      n.onclick = () => { window.focus(); n.close(); };
+    }catch(e){ /* ignore */ }
+  }
+  // Check every 15s so the 10-minute marks are caught promptly; background tabs
+  // may be throttled by the browser but will still catch each mark within ~1 min.
+  setInterval(tickAlarm, 15000);
+
+  render();
+})();
+</script>
+</body>
+</html>
